@@ -45,6 +45,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         if (invincibleTimer > 0f) return;
 
         CurrentHealth -= amount;
+        Debug.Log("[PlayerHealth] 受伤 " + amount + "，当前血量 " + CurrentHealth + "/" + maxHealth);
         SetInvincible(hitInvincibleTime);
 
         if (CurrentHealth <= 0)
