@@ -24,6 +24,7 @@ public class UpgradeUI : MonoBehaviour
         GameObject canvasGo = new GameObject("UpgradeCanvas");
         canvas = canvasGo.AddComponent<Canvas>();
         canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+        canvas.sortingOrder = 5; // 盖在 HUD 之上
         canvasGo.AddComponent<CanvasScaler>();
         canvasGo.AddComponent<GraphicRaycaster>();
 

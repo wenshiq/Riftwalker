@@ -108,6 +108,8 @@ public static class RiftwalkerSetup
         GameObject mgr = FindOrCreate("GameManager");
         EnsureComponent<RoomManager>(mgr);
         EnsureComponent<UpgradeUI>(mgr);
+        EnsureComponent<HUD>(mgr);
+        EnsureComponent<EndScreenUI>(mgr);
         EnsureComponent<GameManager>(mgr);
 
         CameraFollow follow = EnsureComponent<CameraFollow>(cam.gameObject);

@@ -2,8 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// 总控：管理一局流程（战斗中 → 选强化 → 下一房间）。
-/// M2 只做基础循环；BOSS / 通关 / 死亡结算放 M3。
+/// 总控：管理一局流程（战斗中 → 选强化 → 下一房间 → 死亡/通关）。
 /// 强化数据在 Awake 里用 Resources.LoadAll 从 Assets/Resources/Data 加载。
 /// </summary>
 public class GameManager : MonoBehaviour
@@ -14,13 +13,17 @@ public class GameManager : MonoBehaviour
 
     private RoomManager roomManager;
     private UpgradeUI upgradeUI;
+    private EndScreenUI endScreenUI;
     private PlayerStats playerStats;
+    private PlayerHealth playerHealth;
+    private Transform playerTransform;
 
     private void Awake()
     {
         Instance = this;
         roomManager = GetComponent<RoomManager>();
         upgradeUI = GetComponent<UpgradeUI>();
+        endScreenUI = GetComponent<EndScreenUI>();
 
         upgradePool = new List<UpgradeData>(Resources.LoadAll<UpgradeData>("Data"));
         if (upgradePool.Count == 0)
@@ -32,9 +35,10 @@ public class GameManager : MonoBehaviour
         GameObject p = GameObject.FindGameObjectWithTag("Player");
         if (p != null)
         {
+            playerTransform = p.transform;
             playerStats = p.GetComponent<PlayerStats>();
-            PlayerHealth health = p.GetComponent<PlayerHealth>();
-            if (health != null) health.OnDied += HandlePlayerDied;
+            playerHealth = p.GetComponent<PlayerHealth>();
+            if (playerHealth != null) playerHealth.OnDied += HandlePlayerDied;
         }
 
         roomManager.OnRoomCleared += HandleRoomCleared;
@@ -58,8 +62,19 @@ public class GameManager : MonoBehaviour
 
     private void HandlePlayerDied()
     {
-        Debug.Log("玩家死亡（M2 先简单处理，M3 做死亡结算/重开）");
         Time.timeScale = 0f;
+        endScreenUI.Show("你死了", Restart);
+    }
+
+    /// <summary>重开一局：重置玩家属性/位置/血量，清空敌人，从第 1 房间重新开始。</summary>
+    private void Restart()
+    {
+        Time.timeScale = 1f;
+        if (playerStats != null) playerStats.Reset();
+        if (playerHealth != null) playerHealth.Reset();
+        if (playerTransform != null) playerTransform.position = Vector3.zero;
+        roomManager.ResetRun();
+        roomManager.StartRun();
     }
 
     private List<UpgradeData> PickRandomUpgrades(int count)

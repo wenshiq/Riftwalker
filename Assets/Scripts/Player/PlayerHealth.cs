@@ -2,7 +2,7 @@ using System;
 using UnityEngine;
 
 /// <summary>
-/// 玩家生命：血量、无敌帧、受伤闪烁、死亡、治疗、提升上限。
+/// 玩家生命：血量、无敌帧、受伤闪烁、死亡、治疗、提升上限、重开一局。
 /// </summary>
 public class PlayerHealth : MonoBehaviour, IDamageable
 {
@@ -15,11 +15,13 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     public int MaxHealth => maxHealth;
     public event Action OnDied;
 
+    private int baseMaxHealth;
     private float invincibleTimer;
     private SpriteRenderer sprite;
 
     private void Awake()
     {
+        baseMaxHealth = maxHealth;
         CurrentHealth = maxHealth;
         sprite = GetComponent<SpriteRenderer>();
     }
@@ -70,5 +72,14 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     public void SetInvincible(float duration)
     {
         invincibleTimer = Mathf.Max(invincibleTimer, duration);
+    }
+
+    /// <summary>重开一局：恢复初始血量上限并满血，重新激活对象。</summary>
+    public void Reset()
+    {
+        maxHealth = baseMaxHealth;
+        CurrentHealth = baseMaxHealth;
+        invincibleTimer = 0f;
+        gameObject.SetActive(true);
     }
 }

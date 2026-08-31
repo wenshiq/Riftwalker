@@ -11,10 +11,18 @@ public class PlayerStats : MonoBehaviour
     public int bulletDamage = 10;
     public int bulletCount = 1;
 
+    private float baseMoveSpeed;
+    private float baseFireRate;
+    private int baseBulletDamage;
+    private int baseBulletCount;
     private PlayerHealth health;
 
     private void Awake()
     {
+        baseMoveSpeed = moveSpeed;
+        baseFireRate = fireRate;
+        baseBulletDamage = bulletDamage;
+        baseBulletCount = bulletCount;
         health = GetComponent<PlayerHealth>();
     }
 
@@ -33,5 +41,14 @@ public class PlayerStats : MonoBehaviour
                 if (health != null) health.IncreaseMaxHealth((int)up.value);
                 break;
         }
+    }
+
+    /// <summary>重开一局：恢复所有基础属性。</summary>
+    public void Reset()
+    {
+        moveSpeed = baseMoveSpeed;
+        fireRate = baseFireRate;
+        bulletDamage = baseBulletDamage;
+        bulletCount = baseBulletCount;
     }
 }

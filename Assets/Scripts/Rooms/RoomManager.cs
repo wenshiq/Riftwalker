@@ -43,6 +43,17 @@ public class RoomManager : MonoBehaviour
         SpawnRoom(CurrentRoom);
     }
 
+    /// <summary>重开一局：清空场上所有敌人并重置房间计数。</summary>
+    public void ResetRun()
+    {
+        foreach (Enemy e in alive)
+        {
+            if (e != null) Destroy(e.gameObject);
+        }
+        alive.Clear();
+        CurrentRoom = 0;
+    }
+
     private void SpawnRoom(int roomNumber)
     {
         int count = baseEnemyCount + (roomNumber - 1) * enemyCountPerRoom;
