@@ -42,6 +42,7 @@ public class GameManager : MonoBehaviour
         }
 
         roomManager.OnRoomCleared += HandleRoomCleared;
+        roomManager.OnBossDefeated += HandleBossDefeated;
         roomManager.StartRun();
     }
 
@@ -58,6 +59,12 @@ public class GameManager : MonoBehaviour
 
         Time.timeScale = 1f;
         roomManager.StartNextRoom();
+    }
+
+    private void HandleBossDefeated()
+    {
+        Time.timeScale = 0f;
+        endScreenUI.Show("通关了！", Restart);
     }
 
     private void HandlePlayerDied()

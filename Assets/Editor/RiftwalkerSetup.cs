@@ -27,6 +27,7 @@ public static class RiftwalkerSetup
         CreateEnemyAsset("Enemy_Chaser", "追猎者", EnemyBehavior.Chaser, 30, 2.5f, 10, new Color(1f, 0.35f, 0.35f));
         CreateEnemyAsset("Enemy_Shooter", "射手", EnemyBehavior.Shooter, 20, 2f, 0, new Color(1f, 0.6f, 0.2f));
         CreateEnemyAsset("Enemy_Exploder", "自爆", EnemyBehavior.Exploder, 15, 4f, 0, new Color(1f, 0.2f, 0.55f));
+        CreateEnemyAsset("Enemy_Boss", "Boss", EnemyBehavior.Chaser, 300, 3f, 20, new Color(0.7f, 0.1f, 0.25f), true, 3f);
 
         CreateUpgradeAsset("Upgrade_MoveSpeed", "移速提升", "移动速度 +1", UpgradeType.MoveSpeed, 1f);
         CreateUpgradeAsset("Upgrade_FireRate", "攻速提升", "射击频率 +1", UpgradeType.FireRate, 1f);
@@ -39,7 +40,7 @@ public static class RiftwalkerSetup
         Debug.Log("数据资产生成完成：Assets/Resources/Data");
     }
 
-    private static void CreateEnemyAsset(string fileName, string displayName, EnemyBehavior behavior, int hp, float speed, int dmg, Color color)
+    private static void CreateEnemyAsset(string fileName, string displayName, EnemyBehavior behavior, int hp, float speed, int dmg, Color color, bool isBoss = false, float scale = 1f)
     {
         string path = "Assets/Resources/Data/" + fileName + ".asset";
         EnemyData data = AssetDatabase.LoadAssetAtPath<EnemyData>(path);
@@ -54,6 +55,8 @@ public static class RiftwalkerSetup
         data.moveSpeed = speed;
         data.contactDamage = dmg;
         data.color = color;
+        data.isBoss = isBoss;
+        data.scale = scale;
         EditorUtility.SetDirty(data);
     }
 

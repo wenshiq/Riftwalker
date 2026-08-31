@@ -13,6 +13,7 @@ public class RoomManager : MonoBehaviour
     [Header("波次配置")]
     [SerializeField] private int baseEnemyCount = 3;
     [SerializeField] private int enemyCountPerRoom = 2;
+    [SerializeField] private int bossRoomInterval = 5; // 每几个房间出一次 Boss
     [SerializeField] private float spawnMinRadius = 3f;
     [SerializeField] private float spawnMaxRadius = 6f;
 
@@ -20,7 +21,9 @@ public class RoomManager : MonoBehaviour
     private readonly List<Enemy> alive = new List<Enemy>();
 
     public int CurrentRoom { get; private set; }
+    public bool IsBossRoom { get; private set; }
     public event System.Action OnRoomCleared;
+    public event System.Action OnBossDefeated;
 
     private void Awake()
     {
@@ -56,9 +59,29 @@ public class RoomManager : MonoBehaviour
 
     private void SpawnRoom(int roomNumber)
     {
-        int count = baseEnemyCount + (roomNumber - 1) * enemyCountPerRoom;
-        for (int i = 0; i < count; i++)
-            SpawnEnemy(RandomEnemyType());
+        IsBossRoom = (roomNumber % bossRoomInterval == 0);
+        EnemyData boss = IsBossRoom ? BossType() : null;
+
+        if (boss != null)
+        {
+            SpawnEnemy(boss);
+        }
+        else
+        {
+            // 没有 Boss 数据（或普通房间）就刷普通波次
+            IsBossRoom = false;
+            int count = baseEnemyCount + (roomNumber - 1) * enemyCountPerRoom;
+            for (int i = 0; i < count; i++)
+                SpawnEnemy(RandomEnemyType());
+        }
+    }
+
+    /// <summary>找到标记为 Boss 的敌人数据，找不到返回 null。</summary>
+    private EnemyData BossType()
+    {
+        foreach (EnemyData d in enemyTypes)
+            if (d != null && d.isBoss) return d;
+        return null;
     }
 
     private EnemyData RandomEnemyType()
@@ -102,6 +125,11 @@ public class RoomManager : MonoBehaviour
     {
         alive.Remove(enemy);
         if (alive.Count == 0)
-            OnRoomCleared?.Invoke();
+        {
+            if (IsBossRoom)
+                OnBossDefeated?.Invoke();
+            else
+                OnRoomCleared?.Invoke();
+        }
     }
 }

@@ -22,6 +22,8 @@ public class EnemyData : ScriptableObject
     public float moveSpeed = 2.5f;
     public int contactDamage = 10;
     public Color color = new Color(1f, 0.35f, 0.35f);
+    public bool isBoss = false;  // 标记为 Boss（Boss 房间单独刷一只）
+    public float scale = 1f;     // 体型缩放（Boss 放大用）
 
     [Header("远程（Shooter）")]
     public float shootRange = 8f;

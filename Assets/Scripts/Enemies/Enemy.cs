@@ -35,6 +35,8 @@ public class Enemy : MonoBehaviour, IDamageable
         data = enemyData;
         currentHealth = data.maxHealth;
         GetComponent<SpriteRenderer>().sprite = PlaceholderSprite.Create(data.color, 32);
+        if (data.scale != 1f)
+            transform.localScale = Vector3.one * data.scale; // Boss 放大（碰撞体随 transform 一起缩放）
     }
 
     private void Update()
