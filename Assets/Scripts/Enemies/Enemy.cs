@@ -16,6 +16,7 @@ public class Enemy : MonoBehaviour, IDamageable
     private float shootTimer;
     private float explodeTimer;
     private bool exploding;
+    private bool isDead;
 
     private void Awake()
     {
@@ -127,7 +128,7 @@ public class Enemy : MonoBehaviour, IDamageable
         {
             if (c.TryGetComponent(out PlayerHealth ph)) ph.TakeDamage(data.explodeDamage);
         }
-        Destroy(gameObject);
+        Die(); // 自爆也是死亡，走统一入口通知 RoomManager
     }
 
     private void OnCollisionStay2D(Collision2D collision)
@@ -145,11 +146,18 @@ public class Enemy : MonoBehaviour, IDamageable
 
     public void TakeDamage(int amount)
     {
+        if (isDead) return;
         currentHealth -= amount;
         if (currentHealth <= 0)
-        {
-            RoomManager.Instance?.NotifyEnemyDied(this);
-            Destroy(gameObject);
-        }
+            Die();
+    }
+
+    /// <summary>统一死亡入口：通知 RoomManager 并销毁，保证所有死亡路径都走这里。</summary>
+    private void Die()
+    {
+        if (isDead) return;
+        isDead = true;
+        RoomManager.Instance?.NotifyEnemyDied(this);
+        Destroy(gameObject);
     }
 }

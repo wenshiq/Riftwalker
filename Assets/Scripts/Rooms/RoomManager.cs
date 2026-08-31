@@ -86,8 +86,12 @@ public class RoomManager : MonoBehaviour
 
     private EnemyData RandomEnemyType()
     {
-        if (enemyTypes.Count == 0) return null;
-        return enemyTypes[Random.Range(0, enemyTypes.Count)];
+        // 从非 Boss 敌人里随机（Boss 只在 Boss 房间单独刷，不能混进普通波次）
+        List<EnemyData> nonBoss = new List<EnemyData>();
+        foreach (EnemyData d in enemyTypes)
+            if (d != null && !d.isBoss) nonBoss.Add(d);
+        if (nonBoss.Count == 0) return null;
+        return nonBoss[Random.Range(0, nonBoss.Count)];
     }
 
     private void SpawnEnemy(EnemyData data)
