@@ -4,12 +4,11 @@ using UnityEngine;
 /// <summary>
 /// 房间/波次管理：按房间刷怪、追踪存活敌人、清空后通知进入强化阶段。
 /// M2 的"房间"= 一波敌人（真实墙体房间 + 小地图放 M3）。
+/// 敌人数据在 Awake 里用 Resources.LoadAll 从 Assets/Resources/Data 加载。
 /// </summary>
 public class RoomManager : MonoBehaviour
 {
     public static RoomManager Instance { get; private set; }
-
-    [SerializeField] private List<EnemyData> enemyTypes = new List<EnemyData>();
 
     [Header("波次配置")]
     [SerializeField] private int baseEnemyCount = 3;
@@ -17,17 +16,20 @@ public class RoomManager : MonoBehaviour
     [SerializeField] private float spawnMinRadius = 3f;
     [SerializeField] private float spawnMaxRadius = 6f;
 
+    private List<EnemyData> enemyTypes = new List<EnemyData>();
+    private readonly List<Enemy> alive = new List<Enemy>();
+
     public int CurrentRoom { get; private set; }
     public event System.Action OnRoomCleared;
-
-    private readonly List<Enemy> alive = new List<Enemy>();
 
     private void Awake()
     {
         Instance = this;
-    }
 
-    public void SetEnemyTypes(List<EnemyData> types) => enemyTypes = types;
+        enemyTypes = new List<EnemyData>(Resources.LoadAll<EnemyData>("Data"));
+        if (enemyTypes.Count == 0)
+            Debug.LogError("RoomManager：没有加载到任何敌人数据，请先运行菜单 Riftwalker → 一键搭建 M2 场景。");
+    }
 
     public void StartRun()
     {
@@ -50,7 +52,7 @@ public class RoomManager : MonoBehaviour
 
     private EnemyData RandomEnemyType()
     {
-        if (enemyTypes == null || enemyTypes.Count == 0) return null;
+        if (enemyTypes.Count == 0) return null;
         return enemyTypes[Random.Range(0, enemyTypes.Count)];
     }
 

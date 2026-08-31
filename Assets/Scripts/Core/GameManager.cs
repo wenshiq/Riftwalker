@@ -4,12 +4,13 @@ using UnityEngine;
 /// <summary>
 /// 总控：管理一局流程（战斗中 → 选强化 → 下一房间）。
 /// M2 只做基础循环；BOSS / 通关 / 死亡结算放 M3。
+/// 强化数据在 Awake 里用 Resources.LoadAll 从 Assets/Resources/Data 加载。
 /// </summary>
 public class GameManager : MonoBehaviour
 {
     public static GameManager Instance { get; private set; }
 
-    [SerializeField] private List<UpgradeData> upgradePool = new List<UpgradeData>();
+    private List<UpgradeData> upgradePool = new List<UpgradeData>();
 
     private RoomManager roomManager;
     private UpgradeUI upgradeUI;
@@ -20,6 +21,10 @@ public class GameManager : MonoBehaviour
         Instance = this;
         roomManager = GetComponent<RoomManager>();
         upgradeUI = GetComponent<UpgradeUI>();
+
+        upgradePool = new List<UpgradeData>(Resources.LoadAll<UpgradeData>("Data"));
+        if (upgradePool.Count == 0)
+            Debug.LogWarning("GameManager：没有加载到强化数据，请先运行菜单 Riftwalker → 一键搭建 M2 场景。");
     }
 
     private void Start()
@@ -35,8 +40,6 @@ public class GameManager : MonoBehaviour
         roomManager.OnRoomCleared += HandleRoomCleared;
         roomManager.StartRun();
     }
-
-    public void SetUpgradePool(List<UpgradeData> pool) => upgradePool = pool;
 
     private void HandleRoomCleared()
     {

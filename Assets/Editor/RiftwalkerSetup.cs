@@ -1,10 +1,11 @@
-using System.Collections.Generic;
 using UnityEditor;
+using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.SceneManagement;
 
 /// <summary>
-/// 一键搭建 M2 场景：生成数据资产 + 构建场景（相机/地面/玩家/游戏管理对象/事件系统）。
+/// 一键搭建 M2 场景：生成数据资产（到 Assets/Resources/Data）+ 构建场景。
 /// 用法：打开场景后，菜单栏 → Riftwalker → 一键搭建 M2 场景。
 /// 可重复执行（会清理旧敌人、复用已有对象）。
 /// </summary>
@@ -17,11 +18,11 @@ public static class RiftwalkerSetup
         BuildScene();
     }
 
-    // ================= 1. 生成数据资产 =================
+    // ================= 1. 生成数据资产（放到 Resources，运行时用 Resources.LoadAll 加载） =================
 
     private static void GenerateDataAssets()
     {
-        EnsureFolder("Assets/Data");
+        EnsureFolder("Assets/Resources/Data");
 
         CreateEnemyAsset("Enemy_Chaser", "追猎者", EnemyBehavior.Chaser, 30, 2.5f, 10, new Color(1f, 0.35f, 0.35f));
         CreateEnemyAsset("Enemy_Shooter", "射手", EnemyBehavior.Shooter, 20, 2f, 0, new Color(1f, 0.6f, 0.2f));
@@ -35,12 +36,12 @@ public static class RiftwalkerSetup
 
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
-        Debug.Log("数据资产生成完成：Assets/Data");
+        Debug.Log("数据资产生成完成：Assets/Resources/Data");
     }
 
     private static void CreateEnemyAsset(string fileName, string displayName, EnemyBehavior behavior, int hp, float speed, int dmg, Color color)
     {
-        string path = "Assets/Data/" + fileName + ".asset";
+        string path = "Assets/Resources/Data/" + fileName + ".asset";
         EnemyData data = AssetDatabase.LoadAssetAtPath<EnemyData>(path);
         if (data == null)
         {
@@ -58,7 +59,7 @@ public static class RiftwalkerSetup
 
     private static void CreateUpgradeAsset(string fileName, string displayName, string desc, UpgradeType type, float value)
     {
-        string path = "Assets/Data/" + fileName + ".asset";
+        string path = "Assets/Resources/Data/" + fileName + ".asset";
         UpgradeData data = AssetDatabase.LoadAssetAtPath<UpgradeData>(path);
         if (data == null)
         {
@@ -105,14 +106,15 @@ public static class RiftwalkerSetup
         EnsureEventSystem();
 
         GameObject mgr = FindOrCreate("GameManager");
-        RoomManager room = EnsureComponent<RoomManager>(mgr);
-        room.SetEnemyTypes(LoadAll<EnemyData>("t:EnemyData"));
+        EnsureComponent<RoomManager>(mgr);
         EnsureComponent<UpgradeUI>(mgr);
-        GameManager gm = EnsureComponent<GameManager>(mgr);
-        gm.SetUpgradePool(LoadAll<UpgradeData>("t:UpgradeData"));
+        EnsureComponent<GameManager>(mgr);
 
         CameraFollow follow = EnsureComponent<CameraFollow>(cam.gameObject);
         follow.SetTarget(player.transform);
+
+        // 标记场景已修改，保存场景时才会把新建对象写进去
+        EditorSceneManager.MarkSceneDirty(SceneManager.GetActiveScene());
 
         Debug.Log("M2 场景搭建完成，点击 Play 试玩。");
     }
@@ -185,14 +187,5 @@ public static class RiftwalkerSetup
         T c = go.GetComponent<T>();
         if (c == null) c = go.AddComponent<T>();
         return c;
-    }
-
-    private static List<T> LoadAll<T>(string filter) where T : Object
-    {
-        var list = new List<T>();
-        string[] guids = AssetDatabase.FindAssets(filter, new[] { "Assets/Data" });
-        foreach (string guid in guids)
-            list.Add(AssetDatabase.LoadAssetAtPath<T>(AssetDatabase.GUIDToAssetPath(guid)));
-        return list;
     }
 }
