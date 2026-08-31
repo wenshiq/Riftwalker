@@ -2,14 +2,11 @@ using UnityEngine;
 
 /// <summary>
 /// 玩家控制器：WASD 八向移动 + 空格闪避（带无敌帧）。
-/// 使用旧版 Input（简单直接）；移动用 Rigidbody2D.MovePosition 避免穿墙。
+/// 移速从 PlayerStats 读取，方便被强化修改。
 /// </summary>
 [RequireComponent(typeof(Rigidbody2D))]
 public class PlayerController : MonoBehaviour
 {
-    [Header("移动")]
-    [SerializeField] private float moveSpeed = 5f;
-
     [Header("闪避")]
     [SerializeField] private float dashSpeed = 18f;
     [SerializeField] private float dashDuration = 0.15f;
@@ -18,8 +15,9 @@ public class PlayerController : MonoBehaviour
 
     private Rigidbody2D rb;
     private PlayerHealth health;
+    private PlayerStats stats;
     private Vector2 moveInput;
-    private Vector2 facing = Vector2.right; // 当前朝向，无输入时沿用
+    private Vector2 facing = Vector2.right;
 
     private bool isDashing;
     private float dashTimer;
@@ -29,6 +27,7 @@ public class PlayerController : MonoBehaviour
     {
         rb = GetComponent<Rigidbody2D>();
         health = GetComponent<PlayerHealth>();
+        stats = GetComponent<PlayerStats>();
     }
 
     private void Update()
@@ -39,7 +38,8 @@ public class PlayerController : MonoBehaviour
 
     private void FixedUpdate()
     {
-        Vector2 velocity = isDashing ? facing * dashSpeed : moveInput * moveSpeed;
+        float speed = stats != null ? stats.moveSpeed : 5f;
+        Vector2 velocity = isDashing ? facing * dashSpeed : moveInput * speed;
         rb.MovePosition(rb.position + velocity * Time.fixedDeltaTime);
     }
 

@@ -1,61 +1,153 @@
 using UnityEngine;
 
 /// <summary>
-/// 基础敌人：追向玩家，碰到玩家造成接触伤害（带伤害间隔）。
-/// M1 只有这一个敌人类型；M2 会用 ScriptableObject 数据驱动 + 更多行为。
+/// 敌人：数据驱动，按 EnemyData.behavior 切换行为（近战冲锋 / 远程射击 / 自爆）。
 /// </summary>
 [RequireComponent(typeof(Rigidbody2D))]
 public class Enemy : MonoBehaviour, IDamageable
 {
-    [Header("属性")]
-    [SerializeField] private int maxHealth = 30;
-    [SerializeField] private float moveSpeed = 2.5f;
-    [SerializeField] private int contactDamage = 10;
-    [SerializeField] private float attackInterval = 0.8f; // 两次接触伤害的间隔
+    [SerializeField] private EnemyData data;
+    [SerializeField] private float contactAttackInterval = 0.8f;
 
     private Rigidbody2D rb;
     private Transform player;
     private int currentHealth;
-    private float damageTimer;
+    private float contactTimer;
+    private float shootTimer;
+    private float explodeTimer;
+    private bool exploding;
 
     private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
-        currentHealth = maxHealth;
     }
 
     private void Start()
     {
-        // M1 简单做法：靠 Tag 找玩家。M2 换成更规范的单例 / 事件管理。
+        // M2 简单做法：靠 Tag 找玩家。后续可换成更规范的单例/事件管理。
         GameObject p = GameObject.FindGameObjectWithTag("Player");
         if (p != null) player = p.transform;
     }
 
-    private void FixedUpdate()
+    /// <summary>由刷怪逻辑注入数据，并据此上色（占位美术阶段用颜色区分类型）。</summary>
+    public void Init(EnemyData enemyData)
     {
-        if (player == null) return;
-        Vector2 dir = ((Vector2)player.position - rb.position).normalized;
-        rb.MovePosition(rb.position + dir * moveSpeed * Time.fixedDeltaTime);
+        data = enemyData;
+        currentHealth = data.maxHealth;
+        GetComponent<SpriteRenderer>().sprite = PlaceholderSprite.Create(data.color, 32);
     }
 
     private void Update()
     {
-        if (damageTimer > 0f) damageTimer -= Time.deltaTime;
+        if (data == null) return;
+
+        contactTimer -= Time.deltaTime;
+        shootTimer -= Time.deltaTime;
+
+        if (data.behavior == EnemyBehavior.Shooter) ShooterUpdate();
+        else if (data.behavior == EnemyBehavior.Exploder) ExploderUpdate();
+    }
+
+    private void FixedUpdate()
+    {
+        if (data == null || player == null) return;
+        if (exploding) return; // 爆炸蓄力时原地不动
+
+        switch (data.behavior)
+        {
+            case EnemyBehavior.Chaser:
+            case EnemyBehavior.Exploder:
+                MoveToward((Vector2)player.position);
+                break;
+            case EnemyBehavior.Shooter:
+                KeepRange();
+                break;
+        }
+    }
+
+    private void MoveToward(Vector2 target)
+    {
+        Vector2 dir = (target - rb.position).normalized;
+        rb.MovePosition(rb.position + dir * data.moveSpeed * Time.fixedDeltaTime);
+    }
+
+    // 远程敌人保持射程：太远靠近，太近后退
+    private void KeepRange()
+    {
+        Vector2 self = rb.position;
+        Vector2 pp = (Vector2)player.position;
+        float dist = Vector2.Distance(self, pp);
+        Vector2 dir = (pp - self).normalized;
+
+        if (dist > data.shootRange) MoveToward(pp);
+        else if (dist < data.shootRange * 0.6f) rb.MovePosition(self - dir * data.moveSpeed * Time.fixedDeltaTime);
+    }
+
+    private void ShooterUpdate()
+    {
+        if (player == null) return;
+        Vector2 self = (Vector2)transform.position;
+        Vector2 pp = (Vector2)player.position;
+        float dist = Vector2.Distance(self, pp);
+
+        if (dist <= data.shootRange && shootTimer <= 0f)
+        {
+            shootTimer = 1f / data.fireRate;
+            Vector2 dir = (pp - self).normalized;
+            Bullet.Spawn(self, dir, data.bulletSpeed, data.bulletDamage, new Color(1f, 0.6f, 0.2f), true);
+        }
+    }
+
+    private void ExploderUpdate()
+    {
+        if (player == null) return;
+        Vector2 self = (Vector2)transform.position;
+        Vector2 pp = (Vector2)player.position;
+
+        if (!exploding)
+        {
+            if (Vector2.Distance(self, pp) <= data.explodeRange)
+            {
+                exploding = true;
+                explodeTimer = data.explodeDelay;
+            }
+            return;
+        }
+
+        explodeTimer -= Time.deltaTime;
+        if (explodeTimer <= 0f) Explode();
+    }
+
+    private void Explode()
+    {
+        Collider2D[] hits = Physics2D.OverlapCircleAll((Vector2)transform.position, data.explodeRange);
+        foreach (Collider2D c in hits)
+        {
+            if (c.TryGetComponent(out PlayerHealth ph)) ph.TakeDamage(data.explodeDamage);
+        }
+        Destroy(gameObject);
     }
 
     private void OnCollisionStay2D(Collision2D collision)
     {
-        if (damageTimer > 0f) return;
+        // 只有近战敌人靠碰撞打人
+        if (data == null || data.behavior != EnemyBehavior.Chaser) return;
+        if (contactTimer > 0f) return;
+
         if (collision.collider.TryGetComponent(out PlayerHealth health))
         {
-            health.TakeDamage(contactDamage);
-            damageTimer = attackInterval;
+            health.TakeDamage(data.contactDamage);
+            contactTimer = contactAttackInterval;
         }
     }
 
     public void TakeDamage(int amount)
     {
         currentHealth -= amount;
-        if (currentHealth <= 0) Destroy(gameObject);
+        if (currentHealth <= 0)
+        {
+            RoomManager.Instance?.NotifyEnemyDied(this);
+            Destroy(gameObject);
+        }
     }
 }

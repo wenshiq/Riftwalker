@@ -1,8 +1,9 @@
 using UnityEngine;
 
 /// <summary>
-/// 子弹：朝指定方向直线飞行，命中带 IDamageable 的目标造成伤害。
-/// M1 用运行时工厂 Spawn 直接生成（不用 prefab）；M2 会改成对象池 + prefab。
+/// 子弹：朝指定方向直线飞行，命中目标造成伤害。
+/// hurtsPlayer 区分敌我：玩家子弹打敌人（false），敌人子弹打玩家（true）。
+/// M2 仍用运行时工厂 Spawn；M3 换对象池 + prefab。
 /// </summary>
 [RequireComponent(typeof(Rigidbody2D))]
 public class Bullet : MonoBehaviour
@@ -12,9 +13,9 @@ public class Bullet : MonoBehaviour
     private Rigidbody2D rb;
     private Vector2 velocity;
     private int damage;
+    private bool hurtsPlayer;
 
-    /// <summary>运行时创建一个子弹对象（M1 的占位做法，M2 换对象池）。</summary>
-    public static Bullet Spawn(Vector2 position, Vector2 direction, float speed, int damage, Color color)
+    public static Bullet Spawn(Vector2 position, Vector2 direction, float speed, int damage, Color color, bool hurtsPlayer)
     {
         GameObject go = new GameObject("Bullet");
         go.transform.position = position;
@@ -32,7 +33,7 @@ public class Bullet : MonoBehaviour
         rb.bodyType = RigidbodyType2D.Kinematic;
 
         Bullet bullet = go.AddComponent<Bullet>();
-        bullet.Init(direction, speed, damage);
+        bullet.Init(direction, speed, damage, hurtsPlayer);
         return bullet;
     }
 
@@ -41,9 +42,10 @@ public class Bullet : MonoBehaviour
         rb = GetComponent<Rigidbody2D>();
     }
 
-    public void Init(Vector2 direction, float speed, int damage)
+    public void Init(Vector2 direction, float speed, int damage, bool hurtsPlayer)
     {
         this.damage = damage;
+        this.hurtsPlayer = hurtsPlayer;
         velocity = direction * speed;
         Destroy(gameObject, lifeTime);
     }
@@ -57,11 +59,12 @@ public class Bullet : MonoBehaviour
     {
         if (other.TryGetComponent(out IDamageable target))
         {
-            // 玩家自己的子弹不能打到自己
-            if (target is PlayerHealth) return;
-
-            target.TakeDamage(damage);
-            Destroy(gameObject);
+            bool isPlayer = target is PlayerHealth;
+            if (isPlayer == hurtsPlayer)
+            {
+                target.TakeDamage(damage);
+                Destroy(gameObject);
+            }
         }
     }
 }

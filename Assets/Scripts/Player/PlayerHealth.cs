@@ -2,16 +2,17 @@ using System;
 using UnityEngine;
 
 /// <summary>
-/// 玩家生命：负责血量、无敌帧（受击 / 闪避）、受伤闪烁、死亡。
+/// 玩家生命：血量、无敌帧、受伤闪烁、死亡、治疗、提升上限。
 /// </summary>
 public class PlayerHealth : MonoBehaviour, IDamageable
 {
     [Header("生命")]
     [SerializeField] private int maxHealth = 100;
-    [SerializeField] private float hitInvincibleTime = 0.5f;   // 受击后的短暂无敌，避免被群殴瞬秒
-    [SerializeField] private float flashInterval = 0.08f;      // 无敌闪烁频率
+    [SerializeField] private float hitInvincibleTime = 0.5f;
+    [SerializeField] private float flashInterval = 0.08f;
 
     public int CurrentHealth { get; private set; }
+    public int MaxHealth => maxHealth;
     public event Action OnDied;
 
     private float invincibleTimer;
@@ -39,7 +40,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
 
     public void TakeDamage(int amount)
     {
-        if (invincibleTimer > 0f) return; // 无敌期间不掉血
+        if (invincibleTimer > 0f) return;
 
         CurrentHealth -= amount;
         SetInvincible(hitInvincibleTime);
@@ -50,6 +51,19 @@ public class PlayerHealth : MonoBehaviour, IDamageable
             OnDied?.Invoke();
             gameObject.SetActive(false);
         }
+    }
+
+    /// <summary>回血，不超过上限。</summary>
+    public void Heal(int amount)
+    {
+        CurrentHealth = Mathf.Min(CurrentHealth + amount, maxHealth);
+    }
+
+    /// <summary>提升生命上限，并同步回满这部分血量。</summary>
+    public void IncreaseMaxHealth(int amount)
+    {
+        maxHealth += amount;
+        CurrentHealth += amount;
     }
 
     /// <summary>设置无敌时间（取较大值），用于受击保护或闪避无敌帧。</summary>
