@@ -18,6 +18,8 @@ MonoBehaviour:
   moveSpeed: 4
   contactDamage: 0
   color: {r: 1, g: 0.2, b: 0.55, a: 1}
+  isBoss: 0
+  scale: 1
   shootRange: 8
   fireRate: 1
   bulletSpeed: 6

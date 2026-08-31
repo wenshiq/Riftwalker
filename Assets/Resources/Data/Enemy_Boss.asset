@@ -10,16 +10,16 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7483d27b7421d854fb1a54aafffdb300, type: 3}
-  m_Name: Enemy_Shooter
+  m_Name: Enemy_Boss
   m_EditorClassIdentifier: 
-  displayName: "\u5C04\u624B"
-  behavior: 1
-  maxHealth: 20
-  moveSpeed: 2
-  contactDamage: 0
-  color: {r: 1, g: 0.6, b: 0.2, a: 1}
-  isBoss: 0
-  scale: 1
+  displayName: Boss
+  behavior: 0
+  maxHealth: 300
+  moveSpeed: 3
+  contactDamage: 20
+  color: {r: 0.7, g: 0.1, b: 0.25, a: 1}
+  isBoss: 1
+  scale: 3
   shootRange: 8
   fireRate: 1
   bulletSpeed: 6
